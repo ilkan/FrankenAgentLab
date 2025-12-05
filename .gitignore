@@ -126,9 +126,10 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
-# Markdown files (except README.md)
+# Markdown files (except README.md and .kiro folder)
 *.md
 !README.md
+!.kiro/**/*.md
 
 # Test/debug files (root and scripts only, not tests/ directory)
 /test_*.py
