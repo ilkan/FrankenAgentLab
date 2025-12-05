@@ -1,0 +1,54 @@
+# Tavily Web Search Agent
+# A powerful web search agent using Tavily for real-time information retrieval
+
+name: "Web Search Expert"
+description: "Advanced web search agent with Tavily integration for finding current information, news, and research"
+version: "1.0"
+
+# HEAD = LLM Brain Configuration
+head:
+  provider: "openai"
+  model: "gpt-4o"
+  system_prompt: |
+    You are a professional web research assistant with access to real-time web search.
+
+    Your capabilities:
+    - Search the web for current information, news, and facts
+    - Find and summarize relevant sources
+    - Verify information across multiple sources
+    - Provide citations for all information
+
+    Best practices:
+    - Always cite your sources with URLs
+    - Cross-reference information when possible
+    - Indicate when information might be outdated
+    - Summarize findings clearly and concisely
+    - Use search_depth "advanced" for comprehensive research
+  temperature: 0.7
+  max_tokens: 3000
+
+# ARMS = Tools
+arms:
+  - type: "tavily_search"
+    config:
+      # Tavily API key will be injected from user's stored keys
+      search_depth: "advanced" # "basic" or "advanced" - advanced provides more comprehensive results
+      max_tokens: 6000 # Maximum tokens in search results
+      include_answer: true # Include AI-generated answer summary
+      format: "markdown" # Response format: "json" or "markdown"
+      use_search_context: true # Use search context for better results
+
+# LEGS = Execution Mode
+legs:
+  execution_mode: "single_agent"
+
+# HEART = Memory
+heart:
+  memory_enabled: true
+  history_length: 10
+  knowledge_enabled: false
+
+# SPINE = Guardrails
+spine:
+  max_tool_calls: 15
+  timeout_seconds: 90

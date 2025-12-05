@@ -1,0 +1,8 @@
+ENVIRONMENT: production
+LOG_LEVEL: INFO
+GCP_PROJECT_ID: frankenagent-prod
+CLOUD_SQL_CONNECTION_NAME: frankenagent-prod:us-central1:frankenagent-db
+OAUTH_REDIRECT_URI: https://frankenagent-backend-636617621192.us-central1.run.app/api/auth/callback
+FRONTEND_URL: https://frankenagent.com
+BACKEND_URL: https://frankenagent-backend-636617621192.us-central1.run.app
+ALLOWED_ORIGINS: "https://storage.googleapis.com,https://frankenagent.com,http://localhost:3000"

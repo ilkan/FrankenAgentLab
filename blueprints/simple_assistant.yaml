@@ -1,0 +1,43 @@
+# Simple Assistant Blueprint
+# A basic AI assistant with web search capabilities using single_agent execution mode
+
+name: "Simple Assistant"
+description: "A helpful AI assistant with web search capabilities for answering questions and finding information"
+version: "1.0"
+
+# HEAD = LLM Brain Configuration
+head:
+  model: "gpt-4o"
+  provider: "openai"
+  system_prompt: |
+    You are a helpful AI assistant with access to web search.
+    When users ask questions, use the web search tool to find current information.
+    Provide clear, accurate, and concise answers based on the search results.
+    Always cite your sources when using information from the web.
+  temperature: 0.7
+  max_tokens: 2000
+
+# ARMS = Tools and External Integrations
+arms:
+  - name: "web_search"
+    type: "tavily_search"
+    config:
+      api_key_env: "TAVILY_API_KEY"
+
+# LEGS = Execution Mode
+legs:
+  execution_mode: "single_agent"
+
+# HEART = Memory and Knowledge Base
+heart:
+  memory:
+    type: "conversation"
+    max_messages: 20
+  knowledge:
+    enabled: false
+
+# SPINE = Guardrails and Safety Constraints
+spine:
+  max_tool_calls: 5
+  timeout_seconds: 30
+  allowed_domains: []

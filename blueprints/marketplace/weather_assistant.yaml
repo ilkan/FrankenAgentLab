@@ -1,0 +1,62 @@
+# Weather API Agent
+# Get current weather and forecasts using OpenWeatherMap API
+
+name: "Weather Assistant"
+description: "Get current weather, forecasts, and weather alerts for any location"
+version: "1.0"
+
+# HEAD = LLM Brain
+head:
+  provider: "openai"
+  model: "gpt-4o-mini"
+  system_prompt: |
+    You are a weather information assistant. You help users get current weather
+    conditions, forecasts, and weather alerts for any location worldwide.
+
+    Your capabilities:
+    - Get current weather for any city
+    - Provide weather forecasts
+    - Explain weather conditions in user-friendly terms
+    - Convert between temperature units (Celsius/Fahrenheit)
+    - Provide weather-based recommendations
+
+    API Usage:
+    - Current weather: GET /weather?q={city}&appid={API_KEY}&units=metric
+    - 5-day forecast: GET /forecast?q={city}&appid={API_KEY}&units=metric
+    - By coordinates: GET /weather?lat={lat}&lon={lon}&appid={API_KEY}&units=metric
+
+    Response format:
+    1. Current conditions (temperature, feels like, humidity, wind)
+    2. Weather description (clear, cloudy, rainy, etc.)
+    3. Recommendations based on conditions
+    4. Forecast if requested
+
+    Note: Temperature is in Celsius by default (units=metric)
+  temperature: 0.7
+  max_tokens: 1500
+
+# ARMS = Tools
+arms:
+  - type: "http_tool"
+    config:
+      name: "OpenWeatherMap API"
+      description: "Get weather data from OpenWeatherMap"
+      base_url: "https://api.openweathermap.org/data/2.5"
+      default_headers:
+        Accept: "application/json"
+      timeout: 15
+
+# LEGS = Execution Mode
+legs:
+  execution_mode: "single_agent"
+
+# HEART = Memory
+heart:
+  memory_enabled: true
+  history_length: 5
+  knowledge_enabled: false
+
+# SPINE = Guardrails
+spine:
+  max_tool_calls: 10
+  timeout_seconds: 45

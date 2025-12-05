@@ -1,0 +1,51 @@
+# Research Workflow Blueprint
+# A multi-step research agent using workflow execution mode
+
+name: "Research Workflow"
+description: "A structured research agent that searches, analyzes, and summarizes information in sequential steps"
+version: "1.0"
+
+# HEAD = LLM Brain Configuration
+head:
+  model: "gpt-4"
+  provider: "openai"
+  system_prompt: |
+    You are a research assistant that follows a structured workflow.
+    Your task is to:
+    1. Search for relevant information on the given topic
+    2. Analyze the search results to extract key insights
+    3. Synthesize the information into a comprehensive summary
+    
+    Be thorough, objective, and cite your sources.
+  temperature: 0.5
+  max_tokens: 3000
+
+# ARMS = Tools and External Integrations
+arms:
+  - name: "web_search"
+    type: "tavily_search"
+    config:
+      api_key_env: "TAVILY_API_KEY"
+  - name: "file_tools"
+    type: "file_tools"
+    config:
+      base_dir: "./research_output"
+
+# LEGS = Execution Mode
+# Note: Workflow mode requires async function definition - using single_agent for MVP
+legs:
+  execution_mode: "single_agent"
+
+# HEART = Memory and Knowledge Base
+heart:
+  memory:
+    type: "conversation"
+    max_messages: 50
+  knowledge:
+    enabled: false
+
+# SPINE = Guardrails and Safety Constraints
+spine:
+  max_tool_calls: 15
+  timeout_seconds: 120
+  allowed_domains: []

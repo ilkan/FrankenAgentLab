@@ -1,0 +1,69 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Testing
+.pytest_cache/
+.hypothesis/
+.coverage
+htmlcov/
+*.cover
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+docs/
+README.md
+LICENSE
+
+# Frontend (not needed in backend image)
+frontend/
+node_modules/
+
+# Scripts (not needed in production)
+scripts/
+
+# CI/CD
+.github/
+cloudbuild.yaml
+
+# Database
+tmp/
+*.db
+*.sqlite
+
+# Logs
+*.log
+logs/
+
+# GCP
+.gcloudignore

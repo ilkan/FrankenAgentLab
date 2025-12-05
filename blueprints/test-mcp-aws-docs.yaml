@@ -1,0 +1,35 @@
+name: "MCP Research Assistant"
+description: "Agent that uses MCP server to search and fetch information"
+version: "1.0"
+
+head:
+  model: "gpt-4o-mini"
+  provider: "openai"
+  system_prompt: |
+    You are a research assistant that searches MCP servers to find answers to questions.
+    
+    When users ask questions:
+    1. Use the search tool to find relevant information
+    2. Use the fetch tool to get detailed content
+    3. Provide accurate, well-researched answers
+    4. Cite your sources
+    
+    Be thorough but concise in your responses.
+  temperature: 0.3
+  max_tokens: 2000
+
+arms:
+  - type: "mcp_tool"
+    config:
+      server_label: "cats"
+      server_url: "https://777ff573-9947-4b9c-8982-658fa40c7d09-00-3le96u7wsymx.janeway.replit.dev/sse/"
+      allowed_tools: ["search", "fetch"]
+      require_approval: "never"
+
+legs:
+  execution_mode: "single_agent"
+
+spine:
+  guardrails:
+    max_tool_calls: 10
+    timeout_seconds: 60

@@ -1,0 +1,65 @@
+name: MCP Research Team
+description: A team using MCP servers for web fetching and sequential thinking capabilities
+
+head:
+  provider: openai
+  model: gpt-4o-mini
+  system_prompt: |
+    You are a team coordinator managing a research team with specialized capabilities.
+    Delegate web fetching tasks to the Fetch Agent and complex reasoning tasks to the Thinking Agent.
+    Coordinate their work to provide comprehensive, well-reasoned responses.
+  temperature: 0.7
+  max_tokens: 2000
+
+legs:
+  execution_mode: team
+  team_members:
+    - name: "Fetch Agent"
+      role: "Retrieves and analyzes web content using MCP fetch server"
+      head:
+        provider: openai
+        model: gpt-4o-mini
+        system_prompt: |
+          You are a web content specialist with access to fetch capabilities.
+          Use the MCP fetch tools to retrieve web pages, APIs, and online resources.
+          Extract relevant information and provide clear summaries.
+          Always verify the content you retrieve and cite sources.
+        temperature: 0.3
+        max_tokens: 1500
+      arms:
+        - type: mcp_tool
+          config:
+            server_label: "fetch"
+            server_url: "https://remote.mcpservers.org/fetch/mcp"
+            transport_type: "streamable-http"
+            description: "MCP server for fetching web content and APIs"
+    
+    - name: "Thinking Agent"
+      role: "Performs deep analysis using sequential thinking methodology"
+      head:
+        provider: openai
+        model: gpt-4o-mini
+        system_prompt: |
+          You are a reasoning specialist with sequential thinking capabilities.
+          Break down complex problems into logical steps.
+          Use structured thinking to analyze information thoroughly.
+          Provide clear, well-reasoned conclusions with supporting evidence.
+        temperature: 0.5
+        max_tokens: 2000
+      arms:
+        - type: mcp_tool
+          config:
+            server_label: "thinking"
+            server_url: "https://remote.mcpservers.org/sequentialthinking/mcp"
+            transport_type: "streamable-http"
+            description: "MCP server for sequential thinking and reasoning"
+
+heart:
+  memory_enabled: true
+  history_length: 10
+  knowledge_enabled: false
+
+spine:
+  max_tool_calls: 25
+  timeout_seconds: 120
+  allowed_domains: []

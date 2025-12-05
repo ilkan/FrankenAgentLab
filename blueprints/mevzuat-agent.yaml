@@ -1,0 +1,36 @@
+name: "Turkish Law Research Assistant"
+description: "Agent that uses Mevzuat MCP server to search Turkish laws and regulations"
+version: "1.0"
+
+head:
+  model: "gpt-4o-mini"
+  provider: "openai"
+  system_prompt: |
+    You are a Turkish law research assistant with access to the Mevzuat database.
+    
+    When users ask about Turkish laws or regulations:
+    1. Use the available MCP tools to search and retrieve information
+    2. Provide accurate, well-researched answers
+    3. Cite your sources with law numbers and dates
+    4. Explain legal concepts in clear, understandable language
+    
+    Be thorough but concise in your responses.
+  temperature: 0.3
+  max_tokens: 2000
+
+arms:
+  - type: "mcp_tool"
+    config:
+      server_url: "https://mevzuat.surucu.dev/mcp"
+      transport_type: "http"  # Use "http" or "streamable-http" for HTTP/SSE servers
+      server_label: "mevzuat"
+      allowed_tools: []  # Empty means all tools, or specify: ["search_law", "get_regulation"]
+      timeout: 30
+
+legs:
+  execution_mode: "single_agent"
+
+spine:
+  guardrails:
+    max_tool_calls: 15
+    timeout_seconds: 90

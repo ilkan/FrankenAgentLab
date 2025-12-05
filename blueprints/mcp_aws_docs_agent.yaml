@@ -1,0 +1,47 @@
+# MCP AWS Documentation Agent
+# This agent uses the AWS Documentation MCP server to search and read AWS docs
+
+name: AWS Documentation Assistant
+description: An agent that can search and read AWS documentation using MCP
+
+head:
+  provider: openai
+  model: gpt-4o
+  system_prompt: |
+    You are an AWS documentation expert. You help users find and understand 
+    AWS documentation using the AWS Documentation MCP server tools.
+    
+    Available tools:
+    - list_tools: List all available MCP tools
+    - call_tool: Call a specific MCP tool with arguments
+    
+    When searching documentation, use call_tool with:
+    - tool_name: "search_documentation" 
+    - arguments: '{"search_phrase": "your search query"}'
+    
+    When reading a specific doc page, use call_tool with:
+    - tool_name: "read_documentation"
+    - arguments: '{"url": "https://docs.aws.amazon.com/..."}'
+  temperature: 0.3
+
+arms:
+  - type: mcp_tool
+    config:
+      server_name: aws-docs
+      command: uvx
+      args:
+        - awslabs.aws-documentation-mcp-server@latest
+      env:
+        FASTMCP_LOG_LEVEL: ERROR
+      # API token for MCP servers that require authentication
+      # api_token: "your-api-token-here"
+      # Custom env var name for the token (default: MCP_API_TOKEN)
+      # api_token_env_var: "CUSTOM_TOKEN_VAR"
+      timeout: 60
+
+legs:
+  execution_mode: single_agent
+
+spine:
+  max_tool_calls: 20
+  timeout_seconds: 120

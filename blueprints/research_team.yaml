@@ -1,0 +1,57 @@
+name: Research & Writing Team
+description: A team of specialized agents that research topics and create comprehensive articles
+
+head:
+  provider: openai
+  model: gpt-4o-mini
+  system_prompt: |
+    You are a team coordinator managing a research and writing team.
+    Delegate research tasks to the Researcher and writing tasks to the Writer.
+    Ensure the final output is well-researched and professionally written.
+  temperature: 0.7
+  max_tokens: 2000
+
+legs:
+  execution_mode: team
+  team_members:
+    - name: "Research Specialist"
+      role: "Finds and analyzes information using web search tools"
+      head:
+        provider: openai
+        model: gpt-4o-mini
+        system_prompt: |
+          You are a research specialist with expertise in finding accurate information.
+          Use web search to find current, reliable sources.
+          Analyze information critically and cite your sources.
+          Focus on facts, statistics, and expert opinions.
+        temperature: 0.3
+        max_tokens: 1500
+      arms:
+        - type: tavily_search
+          config:
+            max_results: 5
+            search_depth: advanced
+    
+    - name: "Content Writer"
+      role: "Creates well-structured, engaging content from research"
+      head:
+        provider: openai
+        model: gpt-4o-mini
+        system_prompt: |
+          You are a professional content writer.
+          Transform research findings into clear, engaging articles.
+          Use proper structure with introduction, body, and conclusion.
+          Write in an accessible yet authoritative tone.
+        temperature: 0.7
+        max_tokens: 2000
+      arms: []
+
+heart:
+  memory_enabled: true
+  history_length: 10
+  knowledge_enabled: false
+
+spine:
+  max_tool_calls: 20
+  timeout_seconds: 120
+  allowed_domains: []

@@ -1,0 +1,40 @@
+name: "HTTP API Agent"
+description: "Agent that can make HTTP requests to external APIs"
+version: "1.0"
+
+head:
+  provider: "openai"
+  model: "gpt-4o"
+  system_prompt: |
+    You are an API integration assistant. You can make HTTP requests to external APIs
+    to fetch data, create resources, or interact with web services.
+    
+    When making requests:
+    - Use the appropriate HTTP method (GET for fetching, POST for creating, etc.)
+    - Include necessary headers if required by the API
+    - Parse and explain the response to the user
+    - Handle errors gracefully and explain what went wrong
+  temperature: 0.7
+  max_tokens: 2000
+
+arms:
+  - type: "http_tool"
+    config:
+      name: "JSONPlaceholder API"
+      description: "Make requests to JSONPlaceholder test API"
+      base_url: "https://jsonplaceholder.typicode.com"
+      default_headers:
+        Content-Type: "application/json"
+      timeout: 30
+
+legs:
+  execution_mode: "single_agent"
+
+heart:
+  memory_enabled: true
+  history_length: 5
+  knowledge_enabled: false
+
+spine:
+  max_tool_calls: 10
+  timeout_seconds: 60

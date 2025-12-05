@@ -1,0 +1,377 @@
+# Google Cloud Monitoring Alert Policies Configuration
+# This file defines alert policies for FrankenAgent Lab
+
+# Alert 1: High Error Rate
+high_error_rate:
+  displayName: "High Error Rate (>5%)"
+  documentation:
+    content: |
+      ## High Error Rate Alert
+      
+      The error rate has exceeded 5% for the last 5 minutes.
+      
+      ### Possible Causes:
+      - Recent deployment with bugs
+      - External API failures (OpenAI, Anthropic, etc.)
+      - Database connectivity issues
+      - Invalid user inputs
+      
+      ### Investigation Steps:
+      1. Check recent deployments and rollback if necessary
+      2. Review error logs: `severity="ERROR"` in Logs Explorer
+      3. Check external API status pages
+      4. Verify database connectivity
+      5. Review specific error types and patterns
+      
+      ### Runbook:
+      https://docs.frankenagent.dev/runbooks/high-error-rate
+    mimeType: "text/markdown"
+  conditions:
+    - displayName: "Error rate > 5%"
+      conditionThreshold:
+        filter: |
+          resource.type="cloud_run_revision"
+          AND metric.type="logging.googleapis.com/log_entry_count"
+          AND metric.label.severity="ERROR"
+        aggregations:
+          - alignmentPeriod: "60s"
+            perSeriesAligner: "ALIGN_RATE"
+            crossSeriesReducer: "REDUCE_SUM"
+            groupByFields:
+              - "resource.service_name"
+        comparison: "COMPARISON_GT"
+        thresholdValue: 0.05  # 5% error rate
+        duration: "300s"  # 5 minutes
+  combiner: "OR"
+  enabled: true
+  notificationChannels:
+    - "projects/PROJECT_ID/notificationChannels/CHANNEL_ID"  # Replace with actual channel
+  alertStrategy:
+    autoClose: "1800s"  # Auto-close after 30 minutes
+
+# Alert 2: High Latency (p95 > 2s)
+high_latency:
+  displayName: "High Latency (p95 > 2s)"
+  documentation:
+    content: |
+      ## High Latency Alert
+      
+      The 95th percentile latency has exceeded 2 seconds for the last 5 minutes.
+      
+      ### Possible Causes:
+      - Database slow queries
+      - High database CPU/memory usage
+      - Low Redis cache hit rate
+      - External API slowness
+      - Insufficient Cloud Run instances
+      
+      ### Investigation Steps:
+      1. Check database CPU and memory usage
+      2. Review slow query logs in Cloud SQL
+      3. Check Redis cache hit rate
+      4. Review agent execution latency distribution
+      5. Check Cloud Run instance count and scaling
+      
+      ### Runbook:
+      https://docs.frankenagent.dev/runbooks/high-latency
+    mimeType: "text/markdown"
+  conditions:
+    - displayName: "p95 latency > 2000ms"
+      conditionThreshold:
+        filter: |
+          resource.type="cloud_run_revision"
+          AND metric.type="run.googleapis.com/request_latencies"
+        aggregations:
+          - alignmentPeriod: "60s"
+            perSeriesAligner: "ALIGN_DELTA"
+            crossSeriesReducer: "REDUCE_PERCENTILE_95"
+            groupByFields:
+              - "resource.service_name"
+        comparison: "COMPARISON_GT"
+        thresholdValue: 2000  # 2000ms = 2 seconds
+        duration: "300s"  # 5 minutes
+  combiner: "OR"
+  enabled: true
+  notificationChannels:
+    - "projects/PROJECT_ID/notificationChannels/CHANNEL_ID"
+  alertStrategy:
+    autoClose: "1800s"
+
+# Alert 3: Database CPU High (>80%)
+database_cpu_high:
+  displayName: "Database CPU High (>80%)"
+  documentation:
+    content: |
+      ## Database CPU High Alert
+      
+      Cloud SQL CPU utilization has exceeded 80% for the last 10 minutes.
+      
+      ### Possible Causes:
+      - Inefficient queries
+      - Missing indexes
+      - High request volume
+      - Insufficient database resources
+      
+      ### Investigation Steps:
+      1. Review slow query logs
+      2. Check for missing indexes
+      3. Review query execution plans
+      4. Check active connections
+      5. Consider scaling up database instance
+      
+      ### Immediate Actions:
+      - If CPU > 90%, consider scaling up immediately
+      - Review and kill long-running queries if necessary
+      
+      ### Runbook:
+      https://docs.frankenagent.dev/runbooks/database-cpu-high
+    mimeType: "text/markdown"
+  conditions:
+    - displayName: "Database CPU > 80%"
+      conditionThreshold:
+        filter: |
+          resource.type="cloudsql_database"
+          AND metric.type="cloudsql.googleapis.com/database/cpu/utilization"
+        aggregations:
+          - alignmentPeriod: "60s"
+            perSeriesAligner: "ALIGN_MEAN"
+        comparison: "COMPARISON_GT"
+        thresholdValue: 0.80  # 80%
+        duration: "600s"  # 10 minutes
+  combiner: "OR"
+  enabled: true
+  notificationChannels:
+    - "projects/PROJECT_ID/notificationChannels/CHANNEL_ID"
+  alertStrategy:
+    autoClose: "1800s"
+
+# Alert 4: Database Memory High (>80%)
+database_memory_high:
+  displayName: "Database Memory High (>80%)"
+  documentation:
+    content: |
+      ## Database Memory High Alert
+      
+      Cloud SQL memory utilization has exceeded 80% for the last 10 minutes.
+      
+      ### Possible Causes:
+      - Large result sets
+      - Memory leaks
+      - Insufficient database resources
+      - Too many connections
+      
+      ### Investigation Steps:
+      1. Check active connections
+      2. Review query result set sizes
+      3. Check for memory leaks
+      4. Consider scaling up database instance
+      
+      ### Runbook:
+      https://docs.frankenagent.dev/runbooks/database-memory-high
+    mimeType: "text/markdown"
+  conditions:
+    - displayName: "Database Memory > 80%"
+      conditionThreshold:
+        filter: |
+          resource.type="cloudsql_database"
+          AND metric.type="cloudsql.googleapis.com/database/memory/utilization"
+        aggregations:
+          - alignmentPeriod: "60s"
+            perSeriesAligner: "ALIGN_MEAN"
+        comparison: "COMPARISON_GT"
+        thresholdValue: 0.80  # 80%
+        duration: "600s"  # 10 minutes
+  combiner: "OR"
+  enabled: true
+  notificationChannels:
+    - "projects/PROJECT_ID/notificationChannels/CHANNEL_ID"
+  alertStrategy:
+    autoClose: "1800s"
+
+# Alert 5: Service Down (Uptime Check)
+service_down:
+  displayName: "Service Down (Uptime Check Failed)"
+  documentation:
+    content: |
+      ## Service Down Alert
+      
+      The uptime check has failed, indicating the service may be down.
+      
+      ### Possible Causes:
+      - Cloud Run service crashed
+      - Deployment failure
+      - Database unavailable
+      - Network issues
+      
+      ### Immediate Actions:
+      1. Check Cloud Run service status
+      2. Review recent deployments
+      3. Check database connectivity
+      4. Review error logs
+      5. Rollback if necessary
+      
+      ### Escalation:
+      This is a CRITICAL alert. If service is down for > 5 minutes, escalate to on-call engineer.
+      
+      ### Runbook:
+      https://docs.frankenagent.dev/runbooks/service-down
+    mimeType: "text/markdown"
+  conditions:
+    - displayName: "Uptime check failed"
+      conditionThreshold:
+        filter: |
+          resource.type="uptime_url"
+          AND metric.type="monitoring.googleapis.com/uptime_check/check_passed"
+        aggregations:
+          - alignmentPeriod: "60s"
+            perSeriesAligner: "ALIGN_FRACTION_TRUE"
+        comparison: "COMPARISON_LT"
+        thresholdValue: 0.5  # Less than 50% success rate
+        duration: "60s"  # 1 minute
+  combiner: "OR"
+  enabled: true
+  notificationChannels:
+    - "projects/PROJECT_ID/notificationChannels/PAGERDUTY_CHANNEL_ID"  # Critical alerts to PagerDuty
+  alertStrategy:
+    autoClose: "300s"  # Auto-close after 5 minutes
+
+# Alert 6: Low Cache Hit Rate (<80%)
+low_cache_hit_rate:
+  displayName: "Low Redis Cache Hit Rate (<80%)"
+  documentation:
+    content: |
+      ## Low Cache Hit Rate Alert
+      
+      Redis cache hit rate has fallen below 80% for the last 15 minutes.
+      
+      ### Possible Causes:
+      - Cache evictions due to memory pressure
+      - Cache invalidation issues
+      - New traffic patterns
+      - TTL too short
+      
+      ### Investigation Steps:
+      1. Check Redis memory usage
+      2. Review cache eviction rate
+      3. Check cache TTL settings
+      4. Review cache invalidation logic
+      5. Consider increasing Redis memory
+      
+      ### Impact:
+      Low cache hit rate increases database load and latency.
+      
+      ### Runbook:
+      https://docs.frankenagent.dev/runbooks/low-cache-hit-rate
+    mimeType: "text/markdown"
+  conditions:
+    - displayName: "Cache hit rate < 80%"
+      conditionThreshold:
+        filter: |
+          resource.type="redis_instance"
+          AND metric.type="redis.googleapis.com/stats/cache_hit_ratio"
+        aggregations:
+          - alignmentPeriod: "60s"
+            perSeriesAligner: "ALIGN_MEAN"
+        comparison: "COMPARISON_LT"
+        thresholdValue: 0.80  # 80%
+        duration: "900s"  # 15 minutes
+  combiner: "OR"
+  enabled: true
+  notificationChannels:
+    - "projects/PROJECT_ID/notificationChannels/CHANNEL_ID"
+  alertStrategy:
+    autoClose: "1800s"
+
+# Alert 7: High Authentication Failure Rate
+high_auth_failure_rate:
+  displayName: "High Authentication Failure Rate"
+  documentation:
+    content: |
+      ## High Authentication Failure Rate Alert
+      
+      Authentication failure rate has exceeded 20% for the last 10 minutes.
+      
+      ### Possible Causes:
+      - Brute force attack
+      - Password reset issues
+      - Token expiration issues
+      - Bug in authentication logic
+      
+      ### Investigation Steps:
+      1. Review failed login attempts by IP
+      2. Check for suspicious patterns
+      3. Review authentication error logs
+      4. Consider rate limiting or blocking IPs
+      
+      ### Security Actions:
+      - If attack suspected, enable additional rate limiting
+      - Block suspicious IPs
+      - Notify security team
+      
+      ### Runbook:
+      https://docs.frankenagent.dev/runbooks/high-auth-failure-rate
+    mimeType: "text/markdown"
+  conditions:
+    - displayName: "Auth failure rate > 20%"
+      conditionThreshold:
+        filter: |
+          resource.type="cloud_run_revision"
+          AND metric.type="logging.googleapis.com/user/auth_event_count"
+          AND metric.label.success="false"
+        aggregations:
+          - alignmentPeriod: "60s"
+            perSeriesAligner: "ALIGN_RATE"
+            crossSeriesReducer: "REDUCE_SUM"
+        comparison: "COMPARISON_GT"
+        thresholdValue: 0.20  # 20% failure rate
+        duration: "600s"  # 10 minutes
+  combiner: "OR"
+  enabled: true
+  notificationChannels:
+    - "projects/PROJECT_ID/notificationChannels/SECURITY_CHANNEL_ID"
+  alertStrategy:
+    autoClose: "1800s"
+
+# Alert 8: Guardrail Violations Spike
+guardrail_violations_spike:
+  displayName: "Guardrail Violations Spike"
+  documentation:
+    content: |
+      ## Guardrail Violations Spike Alert
+      
+      Guardrail violations have spiked significantly.
+      
+      ### Possible Causes:
+      - Malicious user activity
+      - Bug in agent logic
+      - Misconfigured guardrails
+      - External API issues causing retries
+      
+      ### Investigation Steps:
+      1. Review guardrail violation logs
+      2. Check violation types and patterns
+      3. Review affected users
+      4. Check agent configurations
+      
+      ### Runbook:
+      https://docs.frankenagent.dev/runbooks/guardrail-violations
+    mimeType: "text/markdown"
+  conditions:
+    - displayName: "Guardrail violations > 10/min"
+      conditionThreshold:
+        filter: |
+          resource.type="cloud_run_revision"
+          AND metric.type="logging.googleapis.com/user/guardrail_violation_count"
+        aggregations:
+          - alignmentPeriod: "60s"
+            perSeriesAligner: "ALIGN_RATE"
+            crossSeriesReducer: "REDUCE_SUM"
+        comparison: "COMPARISON_GT"
+        thresholdValue: 10  # 10 violations per minute
+        duration: "300s"  # 5 minutes
+  combiner: "OR"
+  enabled: true
+  notificationChannels:
+    - "projects/PROJECT_ID/notificationChannels/CHANNEL_ID"
+  alertStrategy:
+    autoClose: "1800s"

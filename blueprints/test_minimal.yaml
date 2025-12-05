@@ -1,0 +1,27 @@
+name: "Minimal Test Assistant"
+description: "A minimal test assistant without external tools"
+version: "1.0"
+
+head:
+  model: "gpt-4o-mini"
+  provider: "openai"
+  system_prompt: "You are a helpful test assistant."
+  temperature: 0.7
+  max_tokens: 2000
+
+arms: []
+
+legs:
+  execution_mode: "single_agent"
+
+heart:
+  memory:
+    type: "conversation"
+    max_messages: 20
+  knowledge:
+    enabled: false
+
+spine:
+  max_tool_calls: 10
+  timeout_seconds: 60
+  allowed_domains: []

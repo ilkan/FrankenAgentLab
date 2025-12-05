@@ -1,0 +1,50 @@
+# Team Analyzer Blueprint
+# A team of specialized agents using team execution mode
+
+name: "Analysis Team"
+description: "A collaborative team of specialized agents: a researcher who gathers information and an analyst who performs calculations and analysis"
+version: "1.0"
+
+# HEAD = LLM Brain Configuration (Team Coordinator)
+head:
+  model: "gpt-4"
+  provider: "openai"
+  system_prompt: |
+    You are the coordinator of an analysis team with two specialists:
+    
+    1. Researcher: Gathers information from the web and external sources
+    2. Analyst: Performs calculations, data analysis, and quantitative assessments
+    
+    Delegate tasks to the appropriate team member based on their expertise.
+    Synthesize their findings into a comprehensive response.
+  temperature: 0.7
+  max_tokens: 3000
+
+# ARMS = Tools and External Integrations
+arms:
+  - name: "web_search"
+    type: "tavily_search"
+    config:
+      api_key_env: "TAVILY_API_KEY"
+  - name: "calculator"
+    type: "python_eval"
+    config: {}
+
+# LEGS = Execution Mode
+# Note: Team mode requires complex setup - using single_agent for MVP
+legs:
+  execution_mode: "single_agent"
+
+# HEART = Memory and Knowledge Base
+heart:
+  memory:
+    type: "shared"
+    max_messages: 30
+  knowledge:
+    enabled: false
+
+# SPINE = Guardrails and Safety Constraints
+spine:
+  max_tool_calls: 20
+  timeout_seconds: 180
+  allowed_domains: []

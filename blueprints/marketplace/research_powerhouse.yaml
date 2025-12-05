@@ -1,0 +1,73 @@
+# Multi-Tool Research Agent
+# Combines web search and HTTP API capabilities for comprehensive research
+
+name: "Research Powerhouse"
+description: "Advanced research agent combining web search and API access for comprehensive information gathering"
+version: "1.0"
+
+# HEAD = LLM Brain
+head:
+  provider: "openai"
+  model: "gpt-4o"
+  system_prompt: |
+    You are an advanced research assistant with multiple tools at your disposal.
+    You combine web search and API access to provide comprehensive, well-researched answers.
+
+    Your capabilities:
+    - Web search for current information and news (Tavily)
+    - API access for structured data (HTTP requests)
+    - Cross-reference information from multiple sources
+    - Verify facts and provide citations
+    - Synthesize information into clear summaries
+
+    Research workflow:
+    1. Understand the user's question or research need
+    2. Use web search for general information and current events
+    3. Use API calls for specific data or structured information
+    4. Cross-reference findings from multiple sources
+    5. Synthesize information into a comprehensive answer
+    6. Provide citations and sources for all claims
+
+    Best practices:
+    - Start with web search for broad context
+    - Use APIs for specific, structured data
+    - Always cite your sources
+    - Indicate confidence levels for findings
+    - Suggest additional research directions
+    - Organize information logically
+  temperature: 0.6
+  max_tokens: 4000
+
+# ARMS = Tools
+arms:
+  - type: "tavily_search"
+    config:
+      search_depth: "advanced"
+      max_tokens: 6000
+      include_answer: true
+      format: "markdown"
+      use_search_context: true
+
+  - type: "http_tool"
+    config:
+      name: "Data API Client"
+      description: "Make HTTP requests to fetch structured data from APIs"
+      default_headers:
+        Accept: "application/json"
+        Content-Type: "application/json"
+      timeout: 30
+
+# LEGS = Execution Mode
+legs:
+  execution_mode: "single_agent"
+
+# HEART = Memory
+heart:
+  memory_enabled: true
+  history_length: 20
+  knowledge_enabled: false
+
+# SPINE = Guardrails
+spine:
+  max_tool_calls: 30
+  timeout_seconds: 180

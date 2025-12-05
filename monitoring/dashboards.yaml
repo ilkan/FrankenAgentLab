@@ -1,0 +1,342 @@
+# Google Cloud Monitoring Dashboards Configuration
+# This file defines monitoring dashboards for FrankenAgent Lab
+
+# Dashboard 1: Request Metrics
+request_metrics_dashboard:
+  displayName: "FrankenAgent Lab - Request Metrics"
+  mosaicLayout:
+    columns: 12
+    tiles:
+      # Request rate chart
+      - width: 6
+        height: 4
+        widget:
+          title: "Request Rate (req/s)"
+          xyChart:
+            dataSets:
+              - timeSeriesQuery:
+                  timeSeriesFilter:
+                    filter: 'resource.type="cloud_run_revision" AND metric.type="run.googleapis.com/request_count"'
+                    aggregation:
+                      alignmentPeriod: "60s"
+                      perSeriesAligner: "ALIGN_RATE"
+                      crossSeriesReducer: "REDUCE_SUM"
+                      groupByFields:
+                        - "resource.service_name"
+                plotType: "LINE"
+            yAxis:
+              label: "Requests/second"
+              scale: "LINEAR"
+      
+      # Response latency chart (p50, p95, p99)
+      - xPos: 6
+        width: 6
+        height: 4
+        widget:
+          title: "Response Latency (ms)"
+          xyChart:
+            dataSets:
+              # P50 latency
+              - timeSeriesQuery:
+                  timeSeriesFilter:
+                    filter: 'resource.type="cloud_run_revision" AND metric.type="run.googleapis.com/request_latencies"'
+                    aggregation:
+                      alignmentPeriod: "60s"
+                      perSeriesAligner: "ALIGN_DELTA"
+                      crossSeriesReducer: "REDUCE_PERCENTILE_50"
+                      groupByFields:
+                        - "resource.service_name"
+                plotType: "LINE"
+                legendTemplate: "p50"
+              # P95 latency
+              - timeSeriesQuery:
+                  timeSeriesFilter:
+                    filter: 'resource.type="cloud_run_revision" AND metric.type="run.googleapis.com/request_latencies"'
+                    aggregation:
+                      alignmentPeriod: "60s"
+                      perSeriesAligner: "ALIGN_DELTA"
+                      crossSeriesReducer: "REDUCE_PERCENTILE_95"
+                      groupByFields:
+                        - "resource.service_name"
+                plotType: "LINE"
+                legendTemplate: "p95"
+              # P99 latency
+              - timeSeriesQuery:
+                  timeSeriesFilter:
+                    filter: 'resource.type="cloud_run_revision" AND metric.type="run.googleapis.com/request_latencies"'
+                    aggregation:
+                      alignmentPeriod: "60s"
+                      perSeriesAligner: "ALIGN_DELTA"
+                      crossSeriesReducer: "REDUCE_PERCENTILE_99"
+                      groupByFields:
+                        - "resource.service_name"
+                plotType: "LINE"
+                legendTemplate: "p99"
+            yAxis:
+              label: "Latency (ms)"
+              scale: "LINEAR"
+      
+      # Error rate chart
+      - yPos: 4
+        width: 6
+        height: 4
+        widget:
+          title: "Error Rate (%)"
+          xyChart:
+            dataSets:
+              - timeSeriesQuery:
+                  timeSeriesFilter:
+                    filter: 'resource.type="cloud_run_revision" AND metric.type="logging.googleapis.com/log_entry_count" AND metric.label.severity="ERROR"'
+                    aggregation:
+                      alignmentPeriod: "60s"
+                      perSeriesAligner: "ALIGN_RATE"
+                      crossSeriesReducer: "REDUCE_SUM"
+                      groupByFields:
+                        - "resource.service_name"
+                plotType: "LINE"
+            yAxis:
+              label: "Errors/second"
+              scale: "LINEAR"
+            thresholds:
+              - value: 0.05  # 5% error rate threshold
+                color: "RED"
+                direction: "ABOVE"
+      
+      # Status code distribution
+      - xPos: 6
+        yPos: 4
+        width: 6
+        height: 4
+        widget:
+          title: "HTTP Status Code Distribution"
+          xyChart:
+            dataSets:
+              - timeSeriesQuery:
+                  timeSeriesFilter:
+                    filter: 'resource.type="cloud_run_revision" AND metric.type="run.googleapis.com/request_count"'
+                    aggregation:
+                      alignmentPeriod: "60s"
+                      perSeriesAligner: "ALIGN_RATE"
+                      crossSeriesReducer: "REDUCE_SUM"
+                      groupByFields:
+                        - "metric.response_code_class"
+                plotType: "STACKED_AREA"
+            yAxis:
+              label: "Requests/second"
+              scale: "LINEAR"
+
+# Dashboard 2: Infrastructure Metrics
+infrastructure_dashboard:
+  displayName: "FrankenAgent Lab - Infrastructure"
+  mosaicLayout:
+    columns: 12
+    tiles:
+      # Database connection pool usage
+      - width: 6
+        height: 4
+        widget:
+          title: "Database Connection Pool Usage"
+          xyChart:
+            dataSets:
+              - timeSeriesQuery:
+                  timeSeriesFilter:
+                    filter: 'resource.type="cloudsql_database" AND metric.type="cloudsql.googleapis.com/database/postgresql/num_backends"'
+                    aggregation:
+                      alignmentPeriod: "60s"
+                      perSeriesAligner: "ALIGN_MEAN"
+                      crossSeriesReducer: "REDUCE_SUM"
+                plotType: "LINE"
+            yAxis:
+              label: "Active Connections"
+              scale: "LINEAR"
+      
+      # Database CPU usage
+      - xPos: 6
+        width: 6
+        height: 4
+        widget:
+          title: "Database CPU Usage (%)"
+          xyChart:
+            dataSets:
+              - timeSeriesQuery:
+                  timeSeriesFilter:
+                    filter: 'resource.type="cloudsql_database" AND metric.type="cloudsql.googleapis.com/database/cpu/utilization"'
+                    aggregation:
+                      alignmentPeriod: "60s"
+                      perSeriesAligner: "ALIGN_MEAN"
+                plotType: "LINE"
+            yAxis:
+              label: "CPU %"
+              scale: "LINEAR"
+            thresholds:
+              - value: 0.80  # 80% CPU threshold
+                color: "YELLOW"
+                direction: "ABOVE"
+              - value: 0.90  # 90% CPU threshold
+                color: "RED"
+                direction: "ABOVE"
+      
+      # Redis cache hit rate
+      - yPos: 4
+        width: 6
+        height: 4
+        widget:
+          title: "Redis Cache Hit Rate (%)"
+          xyChart:
+            dataSets:
+              - timeSeriesQuery:
+                  timeSeriesFilter:
+                    filter: 'resource.type="redis_instance" AND metric.type="redis.googleapis.com/stats/cache_hit_ratio"'
+                    aggregation:
+                      alignmentPeriod: "60s"
+                      perSeriesAligner: "ALIGN_MEAN"
+                plotType: "LINE"
+            yAxis:
+              label: "Hit Rate %"
+              scale: "LINEAR"
+      
+      # Cloud Run instance count
+      - xPos: 6
+        yPos: 4
+        width: 6
+        height: 4
+        widget:
+          title: "Cloud Run Instance Count"
+          xyChart:
+            dataSets:
+              - timeSeriesQuery:
+                  timeSeriesFilter:
+                    filter: 'resource.type="cloud_run_revision" AND metric.type="run.googleapis.com/container/instance_count"'
+                    aggregation:
+                      alignmentPeriod: "60s"
+                      perSeriesAligner: "ALIGN_MEAN"
+                      crossSeriesReducer: "REDUCE_SUM"
+                plotType: "LINE"
+            yAxis:
+              label: "Instances"
+              scale: "LINEAR"
+      
+      # Database memory usage
+      - yPos: 8
+        width: 6
+        height: 4
+        widget:
+          title: "Database Memory Usage (%)"
+          xyChart:
+            dataSets:
+              - timeSeriesQuery:
+                  timeSeriesFilter:
+                    filter: 'resource.type="cloudsql_database" AND metric.type="cloudsql.googleapis.com/database/memory/utilization"'
+                    aggregation:
+                      alignmentPeriod: "60s"
+                      perSeriesAligner: "ALIGN_MEAN"
+                plotType: "LINE"
+            yAxis:
+              label: "Memory %"
+              scale: "LINEAR"
+      
+      # Redis memory usage
+      - xPos: 6
+        yPos: 8
+        width: 6
+        height: 4
+        widget:
+          title: "Redis Memory Usage (GB)"
+          xyChart:
+            dataSets:
+              - timeSeriesQuery:
+                  timeSeriesFilter:
+                    filter: 'resource.type="redis_instance" AND metric.type="redis.googleapis.com/stats/memory/usage"'
+                    aggregation:
+                      alignmentPeriod: "60s"
+                      perSeriesAligner: "ALIGN_MEAN"
+                plotType: "LINE"
+            yAxis:
+              label: "Memory (GB)"
+              scale: "LINEAR"
+
+# Dashboard 3: Business Metrics
+business_metrics_dashboard:
+  displayName: "FrankenAgent Lab - Business Metrics"
+  mosaicLayout:
+    columns: 12
+    tiles:
+      # Active users (from auth logs)
+      - width: 6
+        height: 4
+        widget:
+          title: "Active Users (Last Hour)"
+          scorecard:
+            timeSeriesQuery:
+              timeSeriesFilter:
+                filter: 'resource.type="cloud_run_revision" AND metric.type="logging.googleapis.com/user/auth/login_attempt" AND metric.label.success="true"'
+                aggregation:
+                  alignmentPeriod: "3600s"
+                  perSeriesAligner: "ALIGN_COUNT"
+                  crossSeriesReducer: "REDUCE_COUNT_TRUE"
+      
+      # Agent executions
+      - xPos: 6
+        width: 6
+        height: 4
+        widget:
+          title: "Agent Executions (Last Hour)"
+          scorecard:
+            timeSeriesQuery:
+              timeSeriesFilter:
+                filter: 'resource.type="cloud_run_revision" AND metric.type="logging.googleapis.com/user/execution_complete"'
+                aggregation:
+                  alignmentPeriod: "3600s"
+                  perSeriesAligner: "ALIGN_COUNT"
+                  crossSeriesReducer: "REDUCE_SUM"
+      
+      # Blueprints created
+      - yPos: 4
+        width: 6
+        height: 4
+        widget:
+          title: "Blueprints Created (Last 24h)"
+          scorecard:
+            timeSeriesQuery:
+              timeSeriesFilter:
+                filter: 'resource.type="cloud_run_revision" AND jsonPayload.event="blueprint_created"'
+                aggregation:
+                  alignmentPeriod: "86400s"
+                  perSeriesAligner: "ALIGN_COUNT"
+                  crossSeriesReducer: "REDUCE_SUM"
+      
+      # Marketplace clones
+      - xPos: 6
+        yPos: 4
+        width: 6
+        height: 4
+        widget:
+          title: "Marketplace Clones (Last 24h)"
+          scorecard:
+            timeSeriesQuery:
+              timeSeriesFilter:
+                filter: 'resource.type="cloud_run_revision" AND jsonPayload.event="blueprint_cloned"'
+                aggregation:
+                  alignmentPeriod: "86400s"
+                  perSeriesAligner: "ALIGN_COUNT"
+                  crossSeriesReducer: "REDUCE_SUM"
+      
+      # Average execution latency
+      - yPos: 8
+        width: 12
+        height: 4
+        widget:
+          title: "Average Agent Execution Latency (ms)"
+          xyChart:
+            dataSets:
+              - timeSeriesQuery:
+                  timeSeriesFilter:
+                    filter: 'resource.type="cloud_run_revision" AND jsonPayload.event="execution_complete" AND jsonPayload.latency_ms>0'
+                    aggregation:
+                      alignmentPeriod: "300s"
+                      perSeriesAligner: "ALIGN_MEAN"
+                      crossSeriesReducer: "REDUCE_MEAN"
+                plotType: "LINE"
+            yAxis:
+              label: "Latency (ms)"
+              scale: "LINEAR"

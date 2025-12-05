@@ -1,0 +1,39 @@
+# Guardrails Test Blueprint
+# An agent with strict guardrails for testing limits and constraints
+
+name: "Guardrails Test Agent"
+description: "Agent with strict guardrails for testing timeout and tool call limits"
+
+# HEAD = LLM Brain Configuration
+head:
+  provider: "openai"
+  model: "gpt-3.5-turbo"
+  system_prompt: |
+    You are a test assistant with strict guardrails.
+    You have very limited tool calls and timeout.
+    Use tools efficiently and provide concise answers.
+  temperature: 0.5
+  max_tokens: 500
+
+# ARMS = Tools and External Integrations
+arms:
+  - type: "tavily_search"
+    config:
+      max_results: 3
+      search_depth: "basic"
+
+# LEGS = Execution Mode
+legs:
+  execution_mode: "single_agent"
+
+# HEART = Memory and Knowledge Base
+heart:
+  memory_enabled: false
+  history_length: 3
+  knowledge_enabled: false
+
+# SPINE = Guardrails and Safety Constraints (STRICT LIMITS)
+spine:
+  max_tool_calls: 2
+  timeout_seconds: 15
+  allowed_domains: []

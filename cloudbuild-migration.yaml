@@ -1,0 +1,21 @@
+steps:
+  # Build migration container
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/frankenagent-migration:latest'
+      - '-f'
+      - 'Dockerfile.migration'
+      - '.'
+
+  # Push to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/frankenagent-migration:latest'
+
+images:
+  - 'gcr.io/$PROJECT_ID/frankenagent-migration:latest'
+
+timeout: '600s'

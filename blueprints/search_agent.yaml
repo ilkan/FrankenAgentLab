@@ -1,0 +1,40 @@
+# Search Agent Blueprint
+# An AI agent with Tavily search tool for web research
+
+name: "Search Agent"
+description: "A research assistant with web search capabilities using Tavily"
+
+# HEAD = LLM Brain Configuration
+head:
+  provider: "openai"
+  model: "gpt-4o"
+  system_prompt: |
+    You are a research assistant with access to web search via Tavily.
+    When users ask questions that require current information, use the search tool.
+    Provide comprehensive answers with citations from your search results.
+    Always verify information from multiple sources when possible.
+  temperature: 0.7
+  max_tokens: 2000
+
+# ARMS = Tools and External Integrations
+arms:
+  - type: "tavily_search"
+    config:
+      max_results: 5
+      search_depth: "basic"
+
+# LEGS = Execution Mode
+legs:
+  execution_mode: "single_agent"
+
+# HEART = Memory and Knowledge Base
+heart:
+  memory_enabled: false
+  history_length: 5
+  knowledge_enabled: false
+
+# SPINE = Guardrails and Safety Constraints
+spine:
+  max_tool_calls: 10
+  timeout_seconds: 60
+  allowed_domains: []

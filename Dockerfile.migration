@@ -1,0 +1,24 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy dependency files
+COPY pyproject.toml poetry.lock ./
+
+# Install Poetry and dependencies
+RUN pip install --no-cache-dir poetry && \
+    poetry config virtualenvs.create false && \
+    poetry install --only main --no-root --no-interaction --no-ansi
+
+# Copy application code
+COPY alembic.ini ./
+COPY alembic ./alembic
+COPY frankenagent ./frankenagent
+
+# Drop all tables and run fresh migrations
+CMD ["sh", "-c", "psql $DATABASE_URL -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;' && alembic upgrade head"]

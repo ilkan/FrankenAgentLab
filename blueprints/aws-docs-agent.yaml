@@ -1,0 +1,38 @@
+name: "AWS Documentation Expert"
+description: "Agent that uses MCP stdio server to search and read AWS documentation"
+version: "1.0"
+
+head:
+  model: "gpt-4o-mini"
+  provider: "openai"
+  system_prompt: |
+    You are an AWS documentation expert assistant.
+    You have access to the official AWS documentation through the MCP server.
+    
+    When users ask about AWS services:
+    1. Search the AWS docs for relevant information
+    2. Read specific documentation pages
+    3. Provide accurate, up-to-date answers with references
+    4. Include code examples when available
+    
+    Always cite the documentation you reference.
+  temperature: 0.3
+  max_tokens: 2000
+
+arms:
+  - type: "mcp_tool"
+    config:
+      server_name: "aws-docs"
+      command: "uvx"
+      args: ["awslabs.aws-documentation-mcp-server@latest"]
+      env:
+        FASTMCP_LOG_LEVEL: "ERROR"
+      timeout: 30
+
+legs:
+  execution_mode: "single_agent"
+
+spine:
+  guardrails:
+    max_tool_calls: 15
+    timeout_seconds: 90

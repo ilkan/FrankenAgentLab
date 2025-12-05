@@ -1,0 +1,125 @@
+# Cloud Build Configuration for FrankenAgent Lab
+# Automated CI/CD pipeline triggered on push to main branch
+
+steps:
+  # Step 1: Run tests
+  - name: 'python:3.11-slim'
+    id: 'run-tests'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        pip install poetry==1.7.1
+        poetry config virtualenvs.create false
+        poetry install
+        poetry run pytest tests/ -v --tb=short || exit 1
+    
+  # Step 2: Build Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-image'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/frankenagent-backend:$COMMIT_SHA'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/frankenagent-backend:latest'
+      - '.'
+    waitFor: ['run-tests']
+  
+  # Step 3: Push Docker image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-image'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/frankenagent-backend:$COMMIT_SHA'
+    waitFor: ['build-image']
+  
+  # Step 4: Push latest tag
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-latest'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/frankenagent-backend:latest'
+    waitFor: ['build-image']
+  
+  # Step 5: Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-backend'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'frankenagent-backend'
+      - '--image=gcr.io/$PROJECT_ID/frankenagent-backend:$COMMIT_SHA'
+      - '--region=us-central1'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--memory=2Gi'
+      - '--cpu=2'
+      - '--min-instances=0'
+      - '--max-instances=10'
+      - '--concurrency=80'
+      - '--timeout=300'
+      - '--set-cloudsql-instances=$PROJECT_ID:us-central1:frankenagent-db'
+      - '--set-secrets=DATABASE_URL=DATABASE_URL:latest,OPENAI_API_KEY=OPENAI_API_KEY:latest,TAVILY_API_KEY=TAVILY_API_KEY:latest,JWT_SECRET_KEY=JWT_SECRET_KEY:latest,REDIS_HOST=REDIS_HOST:latest,KMS_PROJECT_ID=KMS_PROJECT_ID:latest,KMS_LOCATION=KMS_LOCATION:latest,KMS_KEYRING=KMS_KEYRING:latest,KMS_KEY=KMS_KEY:latest'
+      - '--set-env-vars=ENVIRONMENT=production,LOG_LEVEL=INFO,GCP_PROJECT_ID=$PROJECT_ID'
+    waitFor: ['push-image', 'push-latest']
+  
+  # Step 6: Build frontend
+  - name: 'node:18'
+    id: 'build-frontend'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        cd frontend
+        npm install
+        npm run build
+    waitFor: ['run-tests']
+  
+  # Step 7: Deploy frontend to Cloud Storage
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-frontend'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        # Deploy to bucket
+        gsutil -m rsync -r -d frontend/build/ gs://$PROJECT_ID-frontend
+        
+        # Set cache control headers
+        gsutil -m setmeta -h "Cache-Control:public, max-age=3600" "gs://$PROJECT_ID-frontend/**/*.html" || true
+        gsutil -m setmeta -h "Cache-Control:public, max-age=31536000, immutable" "gs://$PROJECT_ID-frontend/**/*.js" || true
+        gsutil -m setmeta -h "Cache-Control:public, max-age=31536000, immutable" "gs://$PROJECT_ID-frontend/**/*.css" || true
+    waitFor: ['build-frontend']
+  
+  # Step 8: Run smoke tests
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'smoke-tests'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        # Get service URL
+        SERVICE_URL=$$(gcloud run services describe frankenagent-backend \
+          --region=us-central1 \
+          --format="value(status.url)")
+        
+        echo "Testing backend health endpoint..."
+        curl -f $$SERVICE_URL/health || exit 1
+        
+        echo "✓ Smoke tests passed"
+    waitFor: ['deploy-backend']
+
+# Images to push to Container Registry
+images:
+  - 'gcr.io/$PROJECT_ID/frankenagent-backend:$COMMIT_SHA'
+  - 'gcr.io/$PROJECT_ID/frankenagent-backend:latest'
+
+# Build options
+options:
+  machineType: 'N1_HIGHCPU_8'
+  logging: CLOUD_LOGGING_ONLY
+  
+# Timeout for entire build (30 minutes)
+timeout: 1800s

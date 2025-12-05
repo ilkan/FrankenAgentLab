@@ -1,0 +1,40 @@
+# Memory Agent Blueprint
+# An agent with conversation history enabled for multi-turn conversations
+
+name: "Memory Agent"
+description: "A conversational assistant that remembers previous interactions"
+
+# HEAD = LLM Brain Configuration
+head:
+  provider: "openai"
+  model: "gpt-4o"
+  system_prompt: |
+    You are a helpful conversational assistant with memory.
+    You can remember previous messages in the conversation.
+    Reference past interactions when relevant to provide context-aware responses.
+    Be personable and maintain conversation continuity.
+  temperature: 0.8
+  max_tokens: 1500
+
+# ARMS = Tools and External Integrations
+arms:
+  - type: "tavily_search"
+    config:
+      max_results: 5
+      search_depth: "basic"
+
+# LEGS = Execution Mode
+legs:
+  execution_mode: "single_agent"
+
+# HEART = Memory and Knowledge Base (MEMORY ENABLED)
+heart:
+  memory_enabled: true
+  history_length: 10
+  knowledge_enabled: false
+
+# SPINE = Guardrails and Safety Constraints
+spine:
+  max_tool_calls: 8
+  timeout_seconds: 45
+  allowed_domains: []
